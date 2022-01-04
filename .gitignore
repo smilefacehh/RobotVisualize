@@ -1,0 +1,8 @@
+row_ws/
+Robot/.idea/
+Robot/cmake-build-debug/
+Web/app/__pycache__/
+Web/net/__pycache__/
+Web/util/__pycache__/
+Web/views/__pycache__/
+web/venv/
