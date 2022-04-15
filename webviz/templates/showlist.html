@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+  <title>初始化</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='showlist.css') }}">
+</head>
+
+<body>
+  <div class="info">
+    <h3>按照如下示例填写展示内容</h3>
+    <pre style="color:gray; border: 1px dashed gray;">{{show_example}}</pre>
+  </div>
+  <div class="input-field">
+    <form class="c-form" method="post">
+      <textarea name="showlist" id="showlist">{{ request.form['showlist'] }}</textarea><br>
+      <input type="submit" value="提交">
+    </form>  
+  </div>
+</body>
+

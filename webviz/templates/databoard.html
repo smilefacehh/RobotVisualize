@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>dpt-display</title>
+    <script src="https://cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script>
+    <script type="text/javascript" src="static/option.json"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/shine.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/infographic.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/macarons.js"></script>
+</head>
+<body>
+    <div class="div-databoard">
+        {% for i in range(n_block) %}
+        <div id="block-{{i}}"style="width:1500px; height:250px;margin-top:1px"></div>
+        {% endfor %}
+        <script type="text/javascript">
+            var chart_list = new Array();
+            var n_block = 0;
+            var x = new Array();
+            var y = new Array();
+
+            $(
+                function () {
+                    fetchData();
+                    initLineOption();
+                    setInterval(getDynamicData, 100);
+                }
+            );
+            
+            function fetchData(){
+                $.ajax({
+                    type: "GET",
+                        url: "http://127.0.0.1:5000/figure_size/",
+                        dataType: "json",
+                        // 关闭异步，异步无法修改全局变量
+                        async : false, 
+                        success: function (result) {
+                            if(result)
+                            {
+                                n_block = result.fig_size.length;
+                                for(var i = 0; i < n_block; i++){
+                                    var chart = echarts.init(document.getElementById("block-" + i), 'shine', {renderer: 'canvas'});
+                                    chart_list.push(chart);
+                                    y.push(new Array(result.fig_size[i]));
+                                    for(var j = 0; j < result.fig_size[i]; j++){
+                                        y[i][j] = new Array();
+                                    }
+                                }
+                            }
+                        }
+                });
+            }
+
+            function initLineOption() {
+                for(var i = 0; i < n_block; i++){
+                    $.ajax({
+                        type: "GET",
+                        url: "http://127.0.0.1:5000/base_line/" + i + "/",
+                        dataType: "json",
+                        async : false, 
+                        success: function (result) {
+                            chart_list[i].setOption(result);
+                        }
+                    });
+                }
+            }
+
+            function getDynamicData() {
+                $.ajax({
+                    type: "GET",
+                    url: "http://127.0.0.1:5000/dynamic_data",
+                    dataType: "json",
+                    async : true, 
+                    success: function (result) {
+                        x.push(result.x_time);
+                        for(var i = 0; i < result.y.length; i++){
+                            var n_item = result.y[i].length;
+                            var series_data = new Array();
+                            for(var j = 0; j < n_item;  j++){
+                                y[i][j].push([result.x_time, result.y[i][j]])
+                                series_data.push({data:y[i][j]})
+                            }
+                            chart_list[i].setOption({
+                                xAxis: [{data: x}]
+                            });
+                            chart_list[i].setOption({
+                                series: series_data
+                            });
+                        }
+                    }
+                });
+            }
+    
+        </script>
+    </div>
+</body>
+</html>

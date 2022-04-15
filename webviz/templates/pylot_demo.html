@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>dpt-display</title>
+    <script src="https://cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script>
+    <script type="text/javascript" src="static/option.json"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/shine.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/infographic.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/macarons.js"></script>
+</head>
+<body>
+    <div>
+        <!-- ros在线则显示连接的ip，ros状态 -->
+        {% if ros_online %}
+
+        <!-- ros不在线则显示ip列表 -->
+        {% else %}
+            <form method="post" action="/client/list/">
+                <label>局域网设备IP列表</label><br>
+                <select name='select_ip'>
+                    {% if selected_ip == '--选择--' %}
+                        <option value='--选择--' selected='selected'>--选择--</option>
+                    {% else %}
+                        <option value='--选择--'>--选择--</option>
+                    {% endif %}
+        
+                    {% for ip, mac in devices %}
+                        {% if selected_ip == ip %}
+                            {% if ip == host_ip %}
+                                <option value={{ip}} selected='selected'>{{ip}}&nbsp;({{mac}}) 本机</option>
+                            {% else %}
+                                <option value={{ip}} selected='selected'>{{ip}}&nbsp;({{mac}})</option>
+                            {% endif %}
+                        {% else %}
+                            {% if ip == host_ip %}
+                                <option value={{ip}}>{{ip}}&nbsp;({{mac}}) 本机</option>
+                            {% else %}
+                                <option value={{ip}}>{{ip}}&nbsp;({{mac}})</option>
+                            {% endif %}
+                        {% endif %}                
+                    {% endfor %}
+                </select> 
+                <input type="submit" value="连接"/>
+            </form>
+        {% endif %}
+    </div>
+
+    <div id="Line" style="width:1500px; height:250px;margin-top:1px"></div>
+    <script>
+        var chart = echarts.init(document.getElementById('Line'), 'shine', {renderer: 'canvas'});
+        //chart.setOption(option);
+        var old_data = new Array(4);
+        var x_data = new Array();
+        $(
+            function () {
+                fetchData(chart);
+                setInterval(getDynamicData1, 100);
+            }
+        );
+        function fetchData() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:5000/lineChart",
+                dataType: "json",
+                success: function (result) {
+                    chart.setOption(result);
+                    for(var i=0;i<4;i++) 
+                        old_data[i] = [];
+                }
+            });
+        }
+ 
+        function getDynamicData1() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:5000/lineDynamicData1",
+                dataType: "json",
+                success: function (result) {
+                    if(result.xTime == 0)
+                        window.alert('warnning: no data! server is down!')
+                    for(var i=0;i<4;i++)
+                        old_data[i].push([result.xTime, result.yValue[i]]);
+                    x_data.push(result.xTime);
+                    chart.setOption({
+                            series: [{data: old_data[0]},{data: old_data[1]},{data: old_data[2]},{data: old_data[3]}]
+                        });
+                    chart.setOption({
+                            xAxis: [{data: x_data}]
+                        });
+                }
+            });
+        }
+ 
+    </script>
+ 
+    <div id="Line2" style="width:1500px; height:250px"></div>
+    <script>
+        var chart2 = echarts.init(document.getElementById('Line2'), 'infographic', {renderer: 'canvas'});
+        // chart2.setOption(option);
+ 
+        var old_data2 = new Array(4);
+        var x_data2 = new Array();
+        for(var i=0;i<4;i++) 
+            old_data2[i] = [];
+        $(
+            function () {
+                fetchData2(chart2);
+                setInterval(getDynamicData2, 1000);
+            }
+        );
+        function fetchData2() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:5000/lineChart",
+                dataType: "json",
+                success: function (result) {
+                    chart2.setOption(result);
+                    for(var i=0;i<4;i++) 
+                        old_data2[i] = [];
+                }
+            });
+        }
+        function getDynamicData2() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:5000/lineDynamicData2",
+                dataType: "json",
+                success: function (result) {
+                    for(var i=0;i<4;i++)
+                        old_data2[i].push([result.xTime, result.yValue[i]]);
+                    x_data2.push(result.xTime);
+                    
+                    chart2.setOption({
+                            series: [{data: old_data2[0]},{data: old_data2[1]},{data: old_data2[2]},{data: old_data2[3]}]
+                        });
+                    chart2.setOption({
+                            xAxis: [{data: x_data2}]
+                        });
+                }
+            });
+        }
+    </script>
+ 
+</body>
+</html>
